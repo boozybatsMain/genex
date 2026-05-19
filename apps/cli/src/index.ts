@@ -59,7 +59,7 @@ const program = new Command();
 program
   .name("genex")
   .description("Create & sync a Genex project, then open it in the editor.")
-  .version("0.3.0");
+  .version("0.4.0");
 
 program
   .command("create [dir]")
