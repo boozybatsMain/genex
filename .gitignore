@@ -9,4 +9,5 @@ apps/cli/skills/
 
 # Local-only deployment secrets.
 .deploy.env
+.npmrc.genex
 .vercel
