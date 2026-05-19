@@ -30,8 +30,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install just the externalised runtime deps (see apps/server/tsup.config.ts).
-# Pin versions via a tiny standalone package.json so Docker layer caches well.
-COPY apps/server/package.json ./package.json
+# tsup inlined `@poc/shared` into dist/index.js, so we only list the deps that
+# stayed external. A standalone runtime manifest (no workspace refs) keeps this
+# stage tiny and avoids the original error trying to resolve `@poc/shared` from
+# the public registry.
+COPY apps/server/docker.runtime.package.json ./package.json
 RUN npm install --omit=dev --no-audit --no-fund
 
 # Drop in the bundled server.
