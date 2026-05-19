@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Editor requires an explicit project
+
+Opening the editor without a `?projectId=` in the URL no longer silently
+creates a fresh project on the server. Instead, the editor shows a blocking
+modal with copy-pasteable CLI commands and refuses to render the UI until a
+project is loaded. This keeps the server's project list clean and makes the
+"the CLI is the way in" story unambiguous.
+
+### CLI: new `edit` command
+
+`npx @boozybats/genex edit <dir>` re-attaches to an existing project in
+`<dir>`. It requires `<dir>/.genex.json` to exist (created by `genex create`)
+and errors out cleanly otherwise, pointing users at `genex create`. Behaviour
+when the project exists is identical to `genex create` re-running on the same
+folder — `edit` just enforces the precondition.
+
 ### Breaking-ish: new script contract
 
 The script runtime now passes a **second argument** to every user-script

@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react";
 import { useEditor } from "./state/store";
-import { createProject, getProject, putDefinition } from "./net/api";
+import { getProject, putDefinition } from "./net/api";
 import { connectWs } from "./net/ws";
 import { Hierarchy } from "./ui/Hierarchy";
 import { Inspector } from "./ui/Inspector";
 import { Viewport } from "./ui/Viewport";
 import { Toolbar } from "./ui/Toolbar";
+import { NoProjectModal } from "./ui/NoProjectModal";
 import { useRuntime } from "./runtime/useRuntime";
 
 function readProjectIdFromUrl(): string | null {
   const url = new URL(window.location.href);
   return url.searchParams.get("projectId");
-}
-
-function setProjectIdInUrl(id: string) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("projectId", id);
-  window.history.replaceState({}, "", url.toString());
 }
 
 export function App() {
@@ -29,29 +24,23 @@ export function App() {
     setMode,
   } = useEditor();
   const [error, setError] = useState<string | null>(null);
+  const [hasProjectIdInUrl] = useState<boolean>(() => readProjectIdFromUrl() != null);
   useRuntime();
 
   useEffect(() => {
+    const urlId = readProjectIdFromUrl();
+    if (!urlId) return;
     (async () => {
-      const urlId = readProjectIdFromUrl();
-      if (urlId) {
-        const res = await getProject(urlId);
-        if (res) {
-          setProject(res.definition, res.scripts, res.cliAbsPath);
-          connectWs(urlId);
-          return;
-        }
-        setError(
-          `No project found for id "${urlId}". Use the CLI (genex create <dir>) ` +
-            `to create one, or remove the ?projectId= query parameter to start fresh.`,
-        );
+      const res = await getProject(urlId);
+      if (res) {
+        setProject(res.definition, res.scripts, res.cliAbsPath);
+        connectWs(urlId);
         return;
       }
-      // No id in the URL — create a new project and put the id into the URL.
-      const res = await createProject();
-      setProjectIdInUrl(res.projectId);
-      setProject(res.definition, res.scripts, null);
-      connectWs(res.projectId);
+      setError(
+        `No project found for id "${urlId}". Use the CLI to create a new ` +
+          `project, or remove the ?projectId= query parameter.`,
+      );
     })();
   }, []);
 
@@ -65,8 +54,9 @@ export function App() {
     return () => clearTimeout(t);
   }, [projectId, definition, lastDefinitionChangeWasRemote]);
 
-  // Tab to toggle modes
+  // Tab to toggle modes (only when a project is loaded).
   useEffect(() => {
+    if (!definition) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Tab" && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
@@ -75,9 +65,10 @@ export function App() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mode, setMode]);
+  }, [mode, setMode, definition]);
 
-  if (error) return <div style={{ padding: 16, color: "#f88" }}>{error}</div>;
+  if (!hasProjectIdInUrl) return <NoProjectModal />;
+  if (error) return <NoProjectModal error={error} />;
   if (!definition) return <div style={{ padding: 16 }}>Loading…</div>;
 
   return (
