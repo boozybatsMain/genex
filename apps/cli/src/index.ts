@@ -55,7 +55,7 @@ const program = new Command();
 program
   .name("genex")
   .description("Create & sync a Genex project, then open it in the editor.")
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("create [dir]")
@@ -140,10 +140,26 @@ async function runProject({ dir, server: SERVER, editor: EDITOR, open, mode }: R
     console.log(`[genex] created project ${projectId}`);
   } else {
     projectId = cfg.projectId;
-    const r = await fetch(`${SERVER}/projects/${projectId}`);
+    // Idempotent upsert. If the server already has this project we get its
+    // state back; if the server forgot (or never knew) we send our local
+    // files so it can be rehydrated. This makes `genex create`/`edit` survive
+    // server restarts and free-tier container churn — local files are the
+    // source of truth.
+    const localDef = await readLocalDefinition(defPath, projectId, basename(absDir));
+    const localScripts = await readLocalScripts(scriptsDir);
+    const r = await fetch(`${SERVER}/projects/${projectId}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: localDef.name,
+        definition: localDef,
+        scripts: localScripts,
+      }),
+    });
     if (!r.ok) {
       console.error(
-        `[genex] server has no project ${projectId} \u2014 delete ${CONFIG} and re-run \`genex create\``,
+        `[genex] server rejected project ${projectId} (HTTP ${r.status}). ` +
+          `If this keeps happening, check ${SERVER}/healthz.`,
       );
       process.exit(1);
     }
@@ -151,10 +167,18 @@ async function runProject({ dir, server: SERVER, editor: EDITOR, open, mode }: R
       projectId: string;
       definition: GameDefinition;
       scripts: ScriptRecord[];
+      restored?: boolean;
     };
     definition = body.definition;
     scripts = body.scripts;
-    console.log(`[genex] attached to project ${projectId}`);
+    if (body.restored) {
+      console.log(
+        `[genex] restored project ${projectId} from local files ` +
+          `(${scripts.length} script${scripts.length === 1 ? "" : "s"})`,
+      );
+    } else {
+      console.log(`[genex] attached to project ${projectId}`);
+    }
   }
 
   // Fresh-project seeding -------------------------------------------------
@@ -378,6 +402,47 @@ async function runProject({ dir, server: SERVER, editor: EDITOR, open, mode }: R
   // `mode` is currently informational for logging only; behaviour differences
   // for `edit` are enforced above (config-required guard).
   void mode;
+}
+
+/**
+ * Read `gameDefinition.json` from disk if it exists, otherwise return a fresh
+ * empty definition. Used to rehydrate a project when the server has forgotten
+ * it (e.g. Render free tier rotated containers).
+ */
+async function readLocalDefinition(
+  defPath: string,
+  projectId: string,
+  fallbackName: string,
+): Promise<GameDefinition> {
+  if (!existsSync(defPath)) {
+    return { projectId, name: fallbackName, objects: [] };
+  }
+  try {
+    const raw = await readFile(defPath, "utf8");
+    const parsed = JSON.parse(raw) as GameDefinition;
+    parsed.projectId = projectId;
+    if (!parsed.name) parsed.name = fallbackName;
+    if (!Array.isArray(parsed.objects)) parsed.objects = [];
+    return parsed;
+  } catch {
+    return { projectId, name: fallbackName, objects: [] };
+  }
+}
+
+/** Read every `scripts/*.ts` file into ScriptRecord shape. */
+async function readLocalScripts(scriptsDir: string): Promise<ScriptRecord[]> {
+  const { readdir } = await import("node:fs/promises");
+  if (!existsSync(scriptsDir)) return [];
+  const entries = await readdir(scriptsDir);
+  const records: ScriptRecord[] = [];
+  for (const filename of entries) {
+    if (!filename.endsWith(".ts")) continue;
+    const id = filename.slice(0, -3);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(id)) continue;
+    const source = await readFile(`${scriptsDir}/${filename}`, "utf8");
+    records.push({ id, filename, source, updatedAt: Date.now() });
+  }
+  return records;
 }
 
 function openBrowser(url: string) {

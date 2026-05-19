@@ -1,6 +1,6 @@
 {
   "name": "@boozybats/genex",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "CLI for the Genex game-engine editor: create a project, sync scripts, and open the editor in your browser.",
   "type": "module",
   "bin": {

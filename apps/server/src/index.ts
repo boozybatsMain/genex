@@ -14,11 +14,13 @@ import {
 } from "@poc/shared";
 import {
   createProject,
+  ensureProject,
   getProject,
   listScripts,
   setCliPath,
   upsertScript,
 } from "./store.js";
+import type { GameDefinition, ScriptRecord } from "@poc/shared";
 
 const app = express();
 
@@ -80,6 +82,34 @@ app.get("/projects/:id", (req, res) => {
     definition: p.definition,
     scripts: Array.from(p.scripts.values()),
     cliAbsPath: p.summary.cliAbsPath,
+  });
+});
+
+/**
+ * Rehydrate / open a project by id. Idempotent:
+ *   - If the project exists on this server, returns its current state.
+ *   - Otherwise creates it from the body (definition + scripts) so the user's
+ *     local files become the source of truth on a cold server.
+ * The CLI calls this on every startup so projects survive server restarts.
+ */
+app.put("/projects/:id", (req, res) => {
+  const body = req.body as {
+    name?: string;
+    definition?: GameDefinition;
+    scripts?: ScriptRecord[];
+  };
+  const result = ensureProject({
+    projectId: req.params.id,
+    name: body?.name ?? "Untitled",
+    definition: body?.definition,
+    scripts: body?.scripts,
+  });
+  res.json({
+    projectId: result.state.summary.projectId,
+    definition: result.state.definition,
+    scripts: Array.from(result.state.scripts.values()),
+    cliAbsPath: result.state.summary.cliAbsPath,
+    restored: result.created,
   });
 });
 
