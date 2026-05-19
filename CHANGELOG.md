@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Built-in Camera + real player input
+
+Every project now has an undeletable built-in object named `Camera`
+(`id: "__camera__"`, `meshType: "camera"`). Its transform IS the Play
+Mode view — when the user presses Tab the editor's viewport snaps to
+this object's pose and tracks it each frame. In Edit Mode the camera
+renders as a wireframe gizmo so the user can place it.
+
+Alongside that, scripts now have a first-class input API exposed through
+`scene.input`:
+
+- `key(code)`, `keyPressed(code)`, `keyReleased(code)` — keyboard, using
+  `KeyboardEvent.code` values like `"KeyW"`, `"Space"`, `"ShiftLeft"`.
+- `mouseButton(btn)` — 0 = left, 1 = middle, 2 = right.
+- `mouseDeltaX`, `mouseDeltaY`, `wheelDelta` — per-frame motion.
+- `lockPointer()` / `unlockPointer()` / `pointerLocked` — FPS mouselook.
+
+Press/release edges are correctly scoped to a single frame, deltas are
+zeroed between frames, and stuck-key state is cleared on focus loss.
+`scene.camera` is also exposed as a shortcut for the camera handle.
+
+Fresh `genex create` projects ship with a `CameraController.ts` script
+already attached to the Camera — WASD + mouse-look + Space/Ctrl + Shift
+sprint. Replace, extend, or detach it as needed.
+
+Scripts can additionally hook into `window` / `document` / `navigator` /
+`fetch` etc. directly for things outside the input API (gamepads, touch,
+clipboard, networking, audio). The README that lands in every project
+folder now documents the cleanup contract for those listeners.
+
 ### Editor requires an explicit project
 
 Opening the editor without a `?projectId=` in the URL no longer silently

@@ -16,18 +16,23 @@ export function Hierarchy() {
               padding: "4px 6px",
               cursor: "pointer",
               background: o.id === selectedId ? "#264f78" : "transparent",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            {o.name}
-            <button
-              style={{ float: "right" }}
-              onClick={(e) => {
-                e.stopPropagation();
-                removeObject(o.id);
-              }}
-            >
-              ×
-            </button>
+            {o.meshType === "camera" && <span title="Built-in camera">📷</span>}
+            <span style={{ flex: 1 }}>{o.name}</span>
+            {!o.builtin && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeObject(o.id);
+                }}
+              >
+                ×
+              </button>
+            )}
           </li>
         ))}
       </ul>

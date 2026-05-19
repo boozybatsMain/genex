@@ -11,7 +11,9 @@ import type {
   ScriptValueMap,
   Vec3,
 } from "@poc/shared";
+import { BUILTIN_CAMERA_ID, makeBuiltinCamera } from "@poc/shared";
 import { loadScript } from "./scriptLoader";
+import { inputManager } from "./Input";
 
 interface RuntimeObject {
   id: string;
@@ -63,8 +65,15 @@ export class RuntimeWorld {
 
   async start() {
     active = this;
+    // Guarantee the built-in camera exists in the runtime view, even if the
+    // incoming definition is somehow missing it (e.g. old saved state).
+    let cameraDef = this.def.objects.find((o) => o.id === BUILTIN_CAMERA_ID);
+    if (!cameraDef) cameraDef = makeBuiltinCamera();
     for (const o of this.def.objects) {
       this.materialize(o, /*dynamic*/ false);
+    }
+    if (!this.objects.has(BUILTIN_CAMERA_ID)) {
+      this.materialize(cameraDef, /*dynamic*/ false);
     }
     // Two-phase: instantiate everything first so scripts on object A can
     // already see object B inside their start().
@@ -77,6 +86,7 @@ export class RuntimeWorld {
       if (!this.running) return;
       const dt = Math.min((t - this.lastT) / 1000, 0.1);
       this.lastT = t;
+      inputManager.beginFrame();
       // Snapshot to allow scripts to mutate this.objects via scene.create /
       // scene.destroy without invalidating iteration.
       const ids = this.order.slice();
@@ -91,6 +101,7 @@ export class RuntimeWorld {
           }
         }
       }
+      inputManager.endFrame();
       this.emit();
       this.rafId = requestAnimationFrame(tick);
     };
@@ -226,8 +237,16 @@ export class RuntimeWorld {
     if (list.length === 0) this.nameIndex.delete(name);
   }
 
+  /** Returns the live camera handle, materializing it if missing. */
+  getCameraHandle(): ObjectHandle {
+    const ro = this.objects.get(BUILTIN_CAMERA_ID);
+    if (ro) return ro.handle;
+    return this.materialize(makeBuiltinCamera(), false).handle;
+  }
+
   private makeSceneApi(): SceneApi {
     const self = this;
+    const inputApi = inputManager.api();
     return {
       find(name: string) {
         const list = self.nameIndex.get(name);
@@ -287,12 +306,22 @@ export class RuntimeWorld {
             ? findByNameOrId(self, target)
             : self.objects.get(target.id);
         if (!ro) return;
+        // Refuse to destroy the built-in camera; otherwise scripts could
+        // strand the runtime without a view.
+        if (ro.id === BUILTIN_CAMERA_ID) {
+          console.warn("[runtime] refusing to destroy built-in Camera");
+          return;
+        }
         ro.scriptInstances.clear();
         self.objects.delete(ro.id);
         self.indexRemove(ro.name, ro.id);
         const i = self.order.indexOf(ro.id);
         if (i >= 0) self.order.splice(i, 1);
       },
+      get camera() {
+        return self.getCameraHandle();
+      },
+      input: inputApi,
     };
   }
 

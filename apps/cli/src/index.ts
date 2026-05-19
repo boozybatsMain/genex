@@ -13,9 +13,13 @@ import type {
   ScriptRecord,
   WsServerMsg,
 } from "@poc/shared";
+import { ensureBuiltins } from "@poc/shared";
 import { renderReadme } from "./readmeTemplate.js";
 import { bundleSkills } from "./skills.js";
 import {
+  CAMERA_CONTROLLER_SCRIPT_FILENAME,
+  CAMERA_CONTROLLER_SCRIPT_ID,
+  CAMERA_CONTROLLER_SCRIPT_SOURCE,
   ENGINE_TYPES_DTS,
   STARTER_SCRIPT_FILENAME,
   STARTER_SCRIPT_ID,
@@ -188,21 +192,23 @@ async function runProject({ dir, server: SERVER, editor: EDITOR, open, mode }: R
   // editor shows them immediately.
   if (isFresh) {
     const seededDef = buildStarterDefinition(definition);
-    const haveStarter = scripts.some((s) => s.id === STARTER_SCRIPT_ID);
-    if (!haveStarter) {
+    const ensureScript = async (id: string, source: string) => {
+      if (scripts.some((s) => s.id === id)) return;
       const r = await fetch(
-        `${SERVER}/projects/${projectId}/scripts/${STARTER_SCRIPT_ID}`,
+        `${SERVER}/projects/${projectId}/scripts/${id}`,
         {
           method: "PUT",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ source: STARTER_SCRIPT_SOURCE, origin }),
+          body: JSON.stringify({ source, origin }),
         },
       );
       if (r.ok) {
         const rec = (await r.json()) as ScriptRecord;
         scripts = [...scripts, rec];
       }
-    }
+    };
+    await ensureScript(STARTER_SCRIPT_ID, STARTER_SCRIPT_SOURCE);
+    await ensureScript(CAMERA_CONTROLLER_SCRIPT_ID, CAMERA_CONTROLLER_SCRIPT_SOURCE);
     if (seededDef !== definition) {
       await fetch(`${SERVER}/projects/${projectId}/definition`, {
         method: "PUT",
@@ -211,7 +217,9 @@ async function runProject({ dir, server: SERVER, editor: EDITOR, open, mode }: R
       });
       definition = seededDef;
     }
-    console.log(`[genex] seeded starter scene + ${STARTER_SCRIPT_FILENAME}`);
+    console.log(
+      `[genex] seeded starter scene + ${STARTER_SCRIPT_FILENAME} + ${CAMERA_CONTROLLER_SCRIPT_FILENAME}`,
+    );
   }
 
   // Write scripts (don't clobber local changes).
@@ -415,7 +423,7 @@ async function readLocalDefinition(
   fallbackName: string,
 ): Promise<GameDefinition> {
   if (!existsSync(defPath)) {
-    return { projectId, name: fallbackName, objects: [] };
+    return ensureBuiltins({ projectId, name: fallbackName, objects: [] });
   }
   try {
     const raw = await readFile(defPath, "utf8");
@@ -423,9 +431,9 @@ async function readLocalDefinition(
     parsed.projectId = projectId;
     if (!parsed.name) parsed.name = fallbackName;
     if (!Array.isArray(parsed.objects)) parsed.objects = [];
-    return parsed;
+    return ensureBuiltins(parsed);
   } catch {
-    return { projectId, name: fallbackName, objects: [] };
+    return ensureBuiltins({ projectId, name: fallbackName, objects: [] });
   }
 }
 

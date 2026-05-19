@@ -1,4 +1,5 @@
 import type { GameDefinition } from "@poc/shared";
+import { BUILTIN_CAMERA_ID, ensureBuiltins } from "@poc/shared";
 
 /**
  * Ambient TypeScript declarations dropped into each new project so user
@@ -8,7 +9,7 @@ import type { GameDefinition } from "@poc/shared";
 export const ENGINE_TYPES_DTS = `// Ambient types for user scripts. The runtime strips TS before execution;
 // these declarations are here purely for editor IntelliSense.
 
-declare type MeshType = "none" | "cube" | "sphere" | "cylinder";
+declare type MeshType = "none" | "cube" | "sphere" | "cylinder" | "camera";
 
 declare interface Vec3 {
   x: number;
@@ -34,12 +35,37 @@ declare interface CreateObjectOptions {
   scriptIds?: string[];
 }
 
+declare interface InputApi {
+  /** True if the key is currently held. Use \`KeyboardEvent.code\` values
+   *  like "KeyW", "ArrowUp", "Space", "ShiftLeft". */
+  key(code: string): boolean;
+  /** True only on the frame the key was first pressed. */
+  keyPressed(code: string): boolean;
+  /** True only on the frame the key was released. */
+  keyReleased(code: string): boolean;
+  /** Mouse button held: 0 = left, 1 = middle, 2 = right. */
+  mouseButton(btn: number): boolean;
+  /** Mouse motion since last frame (pixels, or pointer-lock deltas). */
+  readonly mouseDeltaX: number;
+  readonly mouseDeltaY: number;
+  /** Scroll wheel delta accumulated this frame. */
+  readonly wheelDelta: number;
+  /** Capture the mouse for FPS-style mouselook. */
+  lockPointer(): void;
+  unlockPointer(): void;
+  readonly pointerLocked: boolean;
+}
+
 declare interface SceneApi {
   find(name: string): ObjectHandle | null;
   findAll(name: string): ObjectHandle[];
   all(): ObjectHandle[];
   create(opts: CreateObjectOptions): ObjectHandle;
   destroy(target: ObjectHandle | string): void;
+  /** The built-in Camera. Mutate its transform to move the Play view. */
+  readonly camera: ObjectHandle;
+  /** Per-frame input snapshot — keys, mouse, wheel, pointer lock. */
+  readonly input: InputApi;
 }
 `;
 
@@ -100,15 +126,106 @@ export default class PlayerCharacter {
 }
 `;
 
+export const CAMERA_CONTROLLER_SCRIPT_ID = "CameraController";
+export const CAMERA_CONTROLLER_SCRIPT_FILENAME = `${CAMERA_CONTROLLER_SCRIPT_ID}.ts`;
+
+/**
+ * Default first-person controller for the built-in Camera. Implements
+ * WASD movement, mouse-look (with pointer lock via left-click) and
+ * Space / Shift for vertical motion. Users can tweak the inspector fields
+ * or replace the script entirely.
+ */
+export const CAMERA_CONTROLLER_SCRIPT_SOURCE = `// CameraController.ts
+//
+// Drives the built-in Camera in Play Mode. WASD = move, mouse = look
+// (left-click to capture, Esc to release), Space / Shift = up/down,
+// Q / E = roll. Replace this script or tweak the fields below to taste.
+
+export default class CameraController {
+  // Inspector ---------------------------------------------------------------
+  moveSpeed: number = 5;
+  sprintMultiplier: number = 2.5;
+  mouseSensitivity: number = 0.0025;
+  invertY: boolean = false;
+
+  // Internals ---------------------------------------------------------------
+  private _yaw: number = 0;
+  private _pitch: number = 0;
+
+  constructor(private self: ObjectHandle, private scene: SceneApi) {}
+
+  start() {
+    // Seed yaw/pitch from the initial transform so the user can pose the
+    // camera in the editor and have it pick up from there.
+    this._yaw = this.self.rotation.y;
+    this._pitch = this.self.rotation.x;
+  }
+
+  update(dt: number) {
+    const input = this.scene.input;
+
+    // Click to capture the mouse for FPS-style look.
+    if (input.mouseButton(0) && !input.pointerLocked) {
+      input.lockPointer();
+    }
+
+    // Mouselook --------------------------------------------------------------
+    if (input.pointerLocked) {
+      this._yaw -= input.mouseDeltaX * this.mouseSensitivity;
+      const dy = input.mouseDeltaY * this.mouseSensitivity * (this.invertY ? -1 : 1);
+      this._pitch -= dy;
+      // Clamp pitch so we can't somersault.
+      const HALF_PI = Math.PI / 2 - 0.01;
+      if (this._pitch > HALF_PI) this._pitch = HALF_PI;
+      if (this._pitch < -HALF_PI) this._pitch = -HALF_PI;
+    }
+    this.self.rotation.x = this._pitch;
+    this.self.rotation.y = this._yaw;
+
+    // Movement (camera-relative) ---------------------------------------------
+    const speed =
+      this.moveSpeed *
+      (input.key("ShiftLeft") || input.key("ShiftRight")
+        ? this.sprintMultiplier
+        : 1);
+
+    let fx = 0;
+    let fz = 0;
+    if (input.key("KeyW") || input.key("ArrowUp")) fz -= 1;
+    if (input.key("KeyS") || input.key("ArrowDown")) fz += 1;
+    if (input.key("KeyA") || input.key("ArrowLeft")) fx -= 1;
+    if (input.key("KeyD") || input.key("ArrowRight")) fx += 1;
+
+    if (fx !== 0 || fz !== 0) {
+      const len = Math.hypot(fx, fz);
+      fx /= len;
+      fz /= len;
+      const sin = Math.sin(this._yaw);
+      const cos = Math.cos(this._yaw);
+      const wx = fx * cos + fz * sin;
+      const wz = -fx * sin + fz * cos;
+      this.self.position.x += wx * speed * dt;
+      this.self.position.z += wz * speed * dt;
+    }
+
+    if (input.key("Space")) this.self.position.y += speed * dt;
+    if (input.key("ControlLeft") || input.key("ControlRight"))
+      this.self.position.y -= speed * dt;
+  }
+}
+`;
+
 /**
  * Build a sensible starter scene with two objects, one of which references
- * the starter script and has an inspector value override.
+ * the starter script and has an inspector value override. The built-in
+ * Camera is guaranteed by \`ensureBuiltins\` and arrives pre-wired with the
+ * \`CameraController\` script so Play Mode is immediately playable.
  */
 export function buildStarterDefinition(
   base: GameDefinition,
 ): GameDefinition {
-  if (base.objects.length > 0) return base; // don't overwrite real state
-  return {
+  if (base.objects.length > 0) return ensureBuiltins(base);
+  const seeded: GameDefinition = ensureBuiltins({
     ...base,
     objects: [
       {
@@ -143,5 +260,25 @@ export function buildStarterDefinition(
         },
       },
     ],
+  });
+  // Attach the CameraController to the freshly-injected built-in camera.
+  return {
+    ...seeded,
+    objects: seeded.objects.map((o) =>
+      o.id === BUILTIN_CAMERA_ID && o.scriptIds.length === 0
+        ? {
+            ...o,
+            scriptIds: [CAMERA_CONTROLLER_SCRIPT_ID],
+            scriptValues: {
+              [CAMERA_CONTROLLER_SCRIPT_ID]: {
+                moveSpeed: 5,
+                sprintMultiplier: 2.5,
+                mouseSensitivity: 0.0025,
+                invertY: false,
+              },
+            },
+          }
+        : o,
+    ),
   };
 }

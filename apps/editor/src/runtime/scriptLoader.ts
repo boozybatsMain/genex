@@ -61,12 +61,26 @@ function stubHandle(): ObjectHandle {
 }
 
 function stubScene(): SceneApi {
+  const camera = stubHandle();
   return {
     find: () => null,
     findAll: () => [],
     all: () => [],
     create: () => stubHandle(),
     destroy: () => {},
+    camera,
+    input: {
+      key: () => false,
+      keyPressed: () => false,
+      keyReleased: () => false,
+      mouseButton: () => false,
+      mouseDeltaX: 0,
+      mouseDeltaY: 0,
+      wheelDelta: 0,
+      lockPointer: () => {},
+      unlockPointer: () => {},
+      pointerLocked: false,
+    },
   };
 }
 

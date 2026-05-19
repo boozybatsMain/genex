@@ -2,6 +2,8 @@ import type { MeshType, GameObjectDef } from "@poc/shared";
 import { useEditor } from "../state/store";
 import { ScriptList } from "./ScriptList";
 
+// User-pickable mesh types. "camera" is reserved for the built-in camera
+// object and never appears in this dropdown.
 const MESH_TYPES: MeshType[] = ["none", "cube", "sphere", "cylinder"];
 
 export function Inspector() {
@@ -23,22 +25,31 @@ export function Inspector() {
         <input
           value={obj.name}
           onChange={(e) => patchObject(obj.id, { name: e.target.value })}
+          disabled={obj.builtin}
         />
       </Field>
-      <Field label="Mesh">
-        <select
-          value={obj.meshType}
-          onChange={(e) =>
-            patchObject(obj.id, { meshType: e.target.value as MeshType })
-          }
-        >
-          {MESH_TYPES.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {obj.builtin ? (
+        <div style={{ fontSize: 12, opacity: 0.6 }}>
+          Built-in {obj.meshType === "camera" ? "camera" : "object"} — this
+          object is always present and can't be deleted. Its transform defines
+          the Play Mode view; attach scripts to it to drive movement.
+        </div>
+      ) : (
+        <Field label="Mesh">
+          <select
+            value={obj.meshType}
+            onChange={(e) =>
+              patchObject(obj.id, { meshType: e.target.value as MeshType })
+            }
+          >
+            {MESH_TYPES.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Vec3Field label="Position" obj={obj} field="position" />
       <Vec3Field label="Rotation" obj={obj} field="rotation" />
       <Vec3Field label="Scale" obj={obj} field="scale" />

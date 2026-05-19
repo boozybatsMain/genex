@@ -8,6 +8,7 @@ import type {
   ScriptRecord,
   Transform,
 } from "@poc/shared";
+import { BUILTIN_CAMERA_ID, ensureBuiltins } from "@poc/shared";
 import { getActiveRuntime } from "../runtime/RuntimeWorld";
 
 export type Mode = "edit" | "play";
@@ -65,17 +66,25 @@ export const useEditor = create<EditorState>((set) => ({
   mode: "edit",
   runtimeSnapshot: null,
 
-  setProject: (definition, scripts, cliAbsPath) =>
+  setProject: (definition, scripts, cliAbsPath) => {
+    const withBuiltins = ensureBuiltins(definition);
     set({
-      projectId: definition.projectId,
-      definition,
-      lastDefinitionChangeWasRemote: true,
+      projectId: withBuiltins.projectId,
+      definition: withBuiltins,
+      // Even if we injected the camera locally, this is still effectively a
+      // "remote-ish" load so we don't want to immediately bounce it back to
+      // the server in the same tick. The next user edit clears the flag.
+      lastDefinitionChangeWasRemote: withBuiltins === definition,
       scripts: new Map(scripts.map((s) => [s.id, s])),
       cliAbsPath,
-    }),
+    });
+  },
 
   applyRemoteDefinition: (definition) =>
-    set({ definition, lastDefinitionChangeWasRemote: true }),
+    set({
+      definition: ensureBuiltins(definition),
+      lastDefinitionChangeWasRemote: true,
+    }),
 
   upsertScript: (s) =>
     set((st) => {
@@ -107,16 +116,20 @@ export const useEditor = create<EditorState>((set) => ({
     }),
 
   removeObject: (id) =>
-    set((st) => ({
-      definition: st.definition
-        ? {
-            ...st.definition,
-            objects: st.definition.objects.filter((o) => o.id !== id),
-          }
-        : null,
-      selectedId: st.selectedId === id ? null : st.selectedId,
-      lastDefinitionChangeWasRemote: false,
-    })),
+    set((st) => {
+      if (!st.definition) return st;
+      const target = st.definition.objects.find((o) => o.id === id);
+      // Built-in objects (e.g. the default Camera) can't be removed.
+      if (!target || target.builtin || id === BUILTIN_CAMERA_ID) return st;
+      return {
+        definition: {
+          ...st.definition,
+          objects: st.definition.objects.filter((o) => o.id !== id),
+        },
+        selectedId: st.selectedId === id ? null : st.selectedId,
+        lastDefinitionChangeWasRemote: false,
+      };
+    }),
 
   selectObject: (id) => set({ selectedId: id }),
 
@@ -125,9 +138,16 @@ export const useEditor = create<EditorState>((set) => ({
       definition: st.definition
         ? {
             ...st.definition,
-            objects: st.definition.objects.map((o) =>
-              o.id === id ? { ...o, ...patch } : o,
-            ),
+            objects: st.definition.objects.map((o) => {
+              if (o.id !== id) return o;
+              // Keep meshType/builtin pinned on builtin objects so the user
+              // can't accidentally turn the Camera into a cube.
+              if (o.builtin) {
+                const { meshType: _ignored, builtin: _b, ...safe } = patch as Partial<GameObjectDef>;
+                return { ...o, ...safe };
+              }
+              return { ...o, ...patch };
+            }),
           }
         : null,
       lastDefinitionChangeWasRemote: false,
