@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-auth",
+  "description": "Colyseus authentication reference. Covers @colyseus/auth module, email/password authentication, anonymous auth, OAuth 2.0 (200+ providers), room-level onAuth, JWT, HTTP middleware, account linking, and email templates. Use when implementing user authentication, adding OAuth providers, protecting HTTP endpoints, or handling room-level auth.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

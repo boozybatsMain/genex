@@ -1,0 +1,7 @@
+{
+  "name": "runtime-module",
+  "description": "Complete guide and code templates for creating runtime modules in not-ai-game-v2. Covers the two-file pattern (core class + adapter), Zod config schemas, event declarations, module state writing, widget integration (data binding, specialized components), Colyseus integration tests, and registration. Use when implementing any new game mechanic as a runtime module (e.g., scoring, timers, racing, capture-the-flag). Invoke with /runtime-module.",
+  "tags": ["runtime", "module", "gamedev"],
+  "sub_skills": [],
+  "source": "claude-user"
+}

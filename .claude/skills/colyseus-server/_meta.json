@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-server",
+  "description": "Colyseus server configuration and Room lifecycle reference. Covers defineServer(), Server class, room definition (filterBy, sortBy, enableRealtimeListing), Room lifecycle hooks (onCreate, onAuth, onJoin, onDrop, onReconnect, onLeave, onDispose, onBeforePatch, onBeforeShutdown), message handling, broadcasting, simulation intervals, clock timers, client management, graceful shutdown, and devMode. Use when setting up a Colyseus server, creating room handlers, managing room lifecycle, handling messages, or configuring the simulation loop.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

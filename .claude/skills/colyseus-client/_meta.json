@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-client",
+  "description": "Colyseus client SDK reference for TypeScript/JavaScript. Covers Client class, room connection methods (joinOrCreate, join, create, joinById, reconnect), sending/receiving messages, state listening (getStateCallbacks), room events, reconnection with backoff, latency measurement, HTTP utilities, multi-region selection, full-stack type safety, and debug panel. Use when connecting to a Colyseus server, listening for state changes, handling messages, or implementing reconnection.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

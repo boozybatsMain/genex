@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-react",
+  "description": "Colyseus React integration patterns. Covers raw useEffect connection, RoomContext provider, Zustand network store, singleton ColyseusService, NetworkBridge pattern (state to Zustand), useFrame access for R3F, two-tier update strategy, React Strict Mode protection, and state callback cleanup. Use when integrating Colyseus with React, managing connection lifecycle, bridging server state to UI stores, or building real-time multiplayer UIs.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

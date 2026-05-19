@@ -1,0 +1,7 @@
+{
+  "name": "game-runtime-system",
+  "description": "Deep architectural reference for the game runtime system: RuntimeEngine, event bus, trigger engine, action executor, module adapter pattern, physics event bridges, template variable resolution, scope-based filter evaluation, game definition → runtime mapping, server-client event flow, Colyseus state sync, and the complete published-world lifecycle. Use this skill to understand HOW the trigger/event/module system works internally, not just how to author triggers (see triggers skill for authoring patterns).",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

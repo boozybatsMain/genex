@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-router",
+  "description": "Decision framework for Colyseus multiplayer game development. Routes to specialized Colyseus skills (server, state, client, auth, devops, react) based on task requirements. Use when implementing multiplayer features, deciding which Colyseus skill to load, or needing guidance on which skills to combine.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "rapier-character-controller",
+  "description": "Rapier physics character controller for kinematic bodies—move-and-slide, slope handling, autostep, snap-to-ground, collision filtering, and platform interaction. Use when implementing player movement, NPC locomotion, or any kinematic body that needs to navigate obstacles, climb slopes, or interact with dynamic objects in a Rapier physics world.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

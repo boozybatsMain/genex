@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-state",
+  "description": "Colyseus Schema-based state synchronization reference. Covers @colyseus/schema decorators (@type), all primitive types, collection types (MapSchema, ArraySchema, SetSchema, CollectionSchema), nested schemas, inheritance, client-side callbacks (getStateCallbacks, onChange, listen, onAdd, onRemove), change tracking rules, bandwidth optimization, and advanced patterns. Use when defining networked state, adding schema fields, listening for state changes, debugging sync issues, or optimizing state size.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

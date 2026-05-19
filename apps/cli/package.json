@@ -1,0 +1,54 @@
+{
+  "name": "@boozybats/genex",
+  "version": "0.1.0",
+  "description": "CLI for the Genex game-engine editor: create a project, sync scripts, and open the editor in your browser.",
+  "type": "module",
+  "bin": {
+    "genex": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js",
+    "copy:skills": "node scripts/copy-skills.mjs",
+    "prepublishOnly": "npm run copy:skills && npm run build"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "commander": "^12.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@poc/shared": "*",
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.10",
+    "tsup": "^8.5.1",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "game-engine",
+    "editor",
+    "three.js",
+    "r3f",
+    "cli",
+    "genex"
+  ],
+  "homepage": "https://github.com/boozybats/genex#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boozybats/genex.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

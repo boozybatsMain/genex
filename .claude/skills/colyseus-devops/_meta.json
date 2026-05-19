@@ -1,0 +1,7 @@
+{
+  "name": "colyseus-devops",
+  "description": "Colyseus deployment, scaling, and monitoring reference. Covers multi-process scaling (RedisPresence, RedisDriver), PM2 configuration, NGINX reverse proxy, Docker, hosting options, Colyseus Monitor, Colyseus Playground, CORS, graceful shutdown, room caching, and performance tuning. Use when deploying a Colyseus server, scaling to multiple processes, setting up reverse proxies, monitoring rooms, or optimizing server performance.",
+  "tags": [],
+  "sub_skills": [],
+  "source": "claude-user"
+}

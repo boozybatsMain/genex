@@ -1,0 +1,7 @@
+{
+  "name": "threejs-animations",
+  "description": "Three.js animation system — AnimationMixer, AnimationAction, blending, additive animations, bone masking, partial body animation, directional locomotion, animation state machines, and R3F/drei integration patterns. Use when implementing character animations, weapon animations, layered animation systems, crossfading, or any animation blending in Three.js or React Three Fiber.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "tags": ["threejs", "animation", "blending", "masking", "r3f", "drei", "game"]
+}

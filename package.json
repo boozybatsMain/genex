@@ -1,0 +1,19 @@
+{
+  "name": "poc-modules",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:server dev:editor",
+    "dev:editor": "npm --workspace apps/editor run dev",
+    "dev:server": "npm --workspace apps/server run dev",
+    "build": "npm-run-all --sequential build:shared build:editor build:server build:cli",
+    "build:shared": "npm --workspace packages/shared run build",
+    "build:editor": "npm --workspace apps/editor run build",
+    "build:server": "npm --workspace apps/server run build",
+    "build:cli": "npm --workspace apps/cli run build"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.5.0"
+  }
+}
