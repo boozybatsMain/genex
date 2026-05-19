@@ -179,12 +179,21 @@ export interface InputApi {
   keyReleased(code: string): boolean;
   /** Mouse button held: 0 = left, 1 = middle, 2 = right. */
   mouseButton(btn: number): boolean;
+  /** True only on the frame the mouse button was first pressed. */
+  mouseButtonPressed(btn: number): boolean;
+  /** True only on the frame the mouse button was released. */
+  mouseButtonReleased(btn: number): boolean;
   /** Mouse motion since last frame, in CSS pixels (or pointer-lock deltas). */
   readonly mouseDeltaX: number;
   readonly mouseDeltaY: number;
   /** Scroll wheel delta accumulated this frame. */
   readonly wheelDelta: number;
-  /** Request pointer lock — useful for mouselook in FPS-style games. */
+  /**
+   * Request pointer lock — useful for mouselook in FPS-style games. The
+   * browser only allows this from inside a user-gesture handler. If you
+   * call it outside one (e.g. from `update()`), the runtime arms the
+   * request and acquires the lock on the next mousedown.
+   */
   lockPointer(): void;
   /** Release pointer lock. */
   unlockPointer(): void;

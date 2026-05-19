@@ -74,6 +74,8 @@ function stubScene(): SceneApi {
       keyPressed: () => false,
       keyReleased: () => false,
       mouseButton: () => false,
+      mouseButtonPressed: () => false,
+      mouseButtonReleased: () => false,
       mouseDeltaX: 0,
       mouseDeltaY: 0,
       wheelDelta: 0,

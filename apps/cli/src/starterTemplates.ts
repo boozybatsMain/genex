@@ -45,6 +45,8 @@ declare interface InputApi {
   keyReleased(code: string): boolean;
   /** Mouse button held: 0 = left, 1 = middle, 2 = right. */
   mouseButton(btn: number): boolean;
+  mouseButtonPressed(btn: number): boolean;
+  mouseButtonReleased(btn: number): boolean;
   /** Mouse motion since last frame (pixels, or pointer-lock deltas). */
   readonly mouseDeltaX: number;
   readonly mouseDeltaY: number;
@@ -164,8 +166,9 @@ export default class CameraController {
   update(dt: number) {
     const input = this.scene.input;
 
-    // Click to capture the mouse for FPS-style look.
-    if (input.mouseButton(0) && !input.pointerLocked) {
+    // Arm pointer-lock on press; the runtime acquires it on this very
+    // mousedown so the gesture-required browser policy is satisfied.
+    if (input.mouseButtonPressed(0) && !input.pointerLocked) {
       input.lockPointer();
     }
 

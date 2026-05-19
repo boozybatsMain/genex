@@ -71,6 +71,16 @@ export function App() {
   if (error) return <NoProjectModal error={error} />;
   if (!definition) return <div style={{ padding: 16 }}>Loading…</div>;
 
+  // Play Mode hides all UI chrome — the viewport becomes the whole screen
+  // and there's nothing to click into except the game. Tab returns to Edit.
+  if (mode === "play") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", background: "#000" }}>
+        <Viewport />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{

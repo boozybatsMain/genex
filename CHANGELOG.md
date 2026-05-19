@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Play Mode is fullscreen + reliable input
+
+Entering Play Mode now hides every editor panel (toolbar, hierarchy,
+inspector) — the viewport fills the entire window and the only way out is
+Tab. Scene-object click-to-select is disabled in Play Mode so LMB / RMB /
+mousedown reach the game cleanly.
+
+Input plumbing rebuilt for reliability:
+
+- All listeners attach to `window` in the capture phase, so R3F's canvas
+  pointer-event system can't swallow mousedown / mouseup / mousemove
+  before the input manager sees them. This fixes "mouse buttons not
+  working" cases.
+- Pointer Lock is acquired via a synchronous arm-on-press flag: scripts
+  call `input.lockPointer()` whenever they like, and the runtime captures
+  the lock on the next real mousedown (the only place the browser's
+  user-activation policy permits it). The starter `CameraController`
+  switched to `mouseButtonPressed(0)` so the lock is requested directly
+  from a press edge.
+- New `input.mouseButtonPressed(btn)` / `mouseButtonReleased(btn)` for
+  one-shot mouse actions (single-click to fire, etc.), matching the
+  keyboard `keyPressed` / `keyReleased` shape.
+- Right-click context menu suppressed while in Play Mode so RMB is a
+  usable game input.
+
 ### Built-in Camera + real player input
 
 Every project now has an undeletable built-in object named `Camera`

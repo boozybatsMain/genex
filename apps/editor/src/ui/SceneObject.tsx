@@ -15,30 +15,42 @@ export function SceneObject({ object }: { object: GameObjectDef }) {
   // Don't render the camera gizmo while in play mode (we're *inside* it).
   if (object.meshType === "camera" && mode === "play") return null;
 
+  // In Play Mode the scene is "live" — clicks belong to the game, not the
+  // editor. Suppress selection and raycast hits so LMB / RMB / mousedown
+  // reach the input manager unimpeded.
+  const playMode = mode === "play";
+  // No-op raycast: keeps the mesh visible but invisible to R3F's pointer
+  // event system, so mousedown/mouseup bubble all the way to the wrapper.
+  const noRaycast = playMode ? noopRaycast : undefined;
+
   return (
     <group
       position={[position.x, position.y, position.z]}
       rotation={[rotation.x, rotation.y, rotation.z]}
       scale={[scale.x, scale.y, scale.z]}
-      onClick={(e) => {
-        e.stopPropagation();
-        selectObject(object.id);
-      }}
+      onClick={
+        playMode
+          ? undefined
+          : (e) => {
+              e.stopPropagation();
+              selectObject(object.id);
+            }
+      }
     >
       {object.meshType === "cube" && (
-        <mesh>
+        <mesh raycast={noRaycast}>
           <boxGeometry />
           <meshStandardMaterial color={color} />
         </mesh>
       )}
       {object.meshType === "sphere" && (
-        <mesh>
+        <mesh raycast={noRaycast}>
           <sphereGeometry args={[0.5, 24, 16]} />
           <meshStandardMaterial color={color} />
         </mesh>
       )}
       {object.meshType === "cylinder" && (
-        <mesh>
+        <mesh raycast={noRaycast}>
           <cylinderGeometry args={[0.5, 0.5, 1, 24]} />
           <meshStandardMaterial color={color} />
         </mesh>
@@ -47,6 +59,8 @@ export function SceneObject({ object }: { object: GameObjectDef }) {
     </group>
   );
 }
+
+const noopRaycast = () => {};
 
 /**
  * Wireframe pyramid pointing along -Z (Three.js camera forward), with a

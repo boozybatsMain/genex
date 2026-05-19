@@ -76,17 +76,22 @@ function PlayHint() {
     <div
       style={{
         position: "absolute",
-        top: 8,
-        left: 8,
-        padding: "4px 8px",
+        top: 12,
+        left: 12,
+        padding: "6px 10px",
         background: "rgba(0,0,0,0.55)",
         color: "#fff",
         fontSize: 12,
-        borderRadius: 4,
+        lineHeight: 1.5,
+        borderRadius: 6,
         pointerEvents: "none",
+        fontFamily: "system-ui, sans-serif",
+        userSelect: "none",
       }}
     >
-      Play Mode — click the view to focus. Tab to stop.
+      <div style={{ opacity: 0.85 }}>
+        Click to capture mouse · Esc to release · <b>Tab</b> to stop
+      </div>
     </div>
   );
 }

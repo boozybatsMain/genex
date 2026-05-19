@@ -99,17 +99,24 @@ Rules:
 |            | play-mode view. Renders as a wireframe gizmo   |
 |            | in Edit Mode, invisible in Play Mode.          |
 
-## The built-in Camera
+## The built-in Camera + Play Mode
 
 Every project has an undeletable object named \`Camera\` with id
 \`"__camera__"\` and \`meshType: "camera"\`. **Its transform IS the Play Mode
-view.** When the user presses Tab to enter Play Mode the editor's viewport
-snaps to this object's position/rotation and tracks it every frame.
+view.** When the user presses Tab to enter Play Mode:
 
-That means scripts can drive the camera the same way they drive any other
-object — by mutating \`this.self.position\` and \`this.self.rotation\` on a
-script attached to the Camera, or by mutating \`scene.camera.position\` etc.
-from any other script.
+- The editor hides all UI panels (hierarchy, inspector, toolbar) and the
+  viewport takes over the entire window. The only way out is Tab.
+- The editor's camera snaps to the built-in Camera object's pose and
+  tracks it every frame. Scene-object selection clicks are disabled —
+  every mouse / keyboard event flows into \`scene.input\`.
+- The CameraController (or whichever script you attach to the camera)
+  drives the view from there.
+
+Scripts can drive the camera the same way they drive any other object —
+by mutating \`this.self.position\` and \`this.self.rotation\` on a script
+attached to the Camera, or by mutating \`scene.camera.position\` etc. from
+any other script.
 
 Fresh projects ship with a \`CameraController.ts\` script attached to the
 camera that implements WASD + mouse-look + Space/Ctrl for vertical motion.
@@ -285,6 +292,9 @@ interface InputApi {
 
   // Mouse buttons: 0 = left, 1 = middle, 2 = right.
   mouseButton(btn: number): boolean;
+  // True only on the frame the button transitioned up -> down / down -> up.
+  mouseButtonPressed(btn: number): boolean;
+  mouseButtonReleased(btn: number): boolean;
 
   // Mouse motion since last frame, in pixels. With pointer lock enabled
   // (typical FPS pattern), these are raw movement deltas with no cursor
@@ -329,7 +339,7 @@ export default class MyCamera {
   update(dt: number) {
     const inp = this.scene.input;
 
-    if (inp.mouseButton(0) && !inp.pointerLocked) inp.lockPointer();
+    if (inp.mouseButtonPressed(0) && !inp.pointerLocked) inp.lockPointer();
     if (inp.pointerLocked) {
       this._yaw -= inp.mouseDeltaX * this.sensitivity;
       this._pitch -= inp.mouseDeltaY * this.sensitivity;
