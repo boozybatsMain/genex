@@ -26,8 +26,8 @@ import {
 
 // Public defaults — overridden by env vars or CLI flags. The published binary
 // ships pointing at the hosted Genex backend; self-hosters set their own.
-const DEFAULT_SERVER = "https://genex-server.koyeb.app";
-const DEFAULT_EDITOR = "https://genex.vercel.app";
+const DEFAULT_SERVER = "https://genex-server.onrender.com";
+const DEFAULT_EDITOR = "https://genex-pi.vercel.app";
 const SERVER_FROM_ENV = process.env.GENEX_SERVER ?? DEFAULT_SERVER;
 const EDITOR_FROM_ENV = process.env.GENEX_EDITOR ?? DEFAULT_EDITOR;
 const CONFIG = ".genex.json";

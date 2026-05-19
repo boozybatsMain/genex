@@ -1,0 +1,19 @@
+# Render Blueprint for the Genex backend.
+# Apply at https://dashboard.render.com/blueprints → New Blueprint Instance.
+
+services:
+  - type: web
+    name: genex-server
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./apps/server/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GENEX_CORS_ORIGIN
+        value: https://genex-pi.vercel.app

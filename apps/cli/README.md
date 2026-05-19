@@ -15,7 +15,7 @@ That command:
 1. Creates a project on the hosted Genex server.
 2. Writes `gameDefinition.json`, `scripts/`, `engine-types.d.ts`, `tsconfig.json`
    and a starter `.claude/skills/` reference dump into `./my-game`.
-3. Opens the editor at `https://genex.vercel.app/?projectId=...`.
+3. Opens the editor at `https://genex-pi.vercel.app/?projectId=...`.
 4. Watches the folder — every save in your IDE hot-reloads in the editor; every
    edit in the editor is mirrored back to disk.
 

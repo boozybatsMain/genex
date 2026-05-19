@@ -37,7 +37,7 @@ RUN npm install --omit=dev --no-audit --no-fund
 # Drop in the bundled server.
 COPY --from=builder /repo/apps/server/dist ./dist
 
-# Koyeb / Render / Fly all inject $PORT. The server reads it (see src/index.ts).
+# Render / Fly / Koyeb all inject $PORT. The server reads it (see src/index.ts).
 EXPOSE 5174
 ENV PORT=5174
 

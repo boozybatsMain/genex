@@ -5,7 +5,7 @@ This monorepo ships as three artefacts:
 | Artefact          | Where it lives        | Where it's hosted     | Cost          |
 |-------------------|-----------------------|-----------------------|---------------|
 | Editor (Vite SPA) | `apps/editor`         | **Vercel** (free)     | $0 forever    |
-| Server (Express + WebSocket) | `apps/server` | **Koyeb** (1 free service)        | $0            |
+| Server (Express + WebSocket) | `apps/server` | **Render** (free web service)     | $0 (sleeps after 15min idle) |
 | CLI               | `apps/cli`            | **npm** as `@boozybats/genex` | $0    |
 
 State is in-memory (no DB). If the server restarts, projects vanish — for
@@ -20,7 +20,7 @@ for a Redis-backed implementation later if you need persistence.
 
 ## 1. Push the repo to GitHub
 
-Koyeb and Vercel both deploy from GitHub. Create a public or private repo
+Render and Vercel both deploy from GitHub. Create a public or private repo
 under your account and push.
 
 ```bash
@@ -33,28 +33,32 @@ git push -u origin main
 
 ---
 
-## 2. Deploy the server to Koyeb
+## 2. Deploy the server to Render
 
-1. Sign up at https://app.koyeb.com (no credit card required for the free
-   tier — 1 small service, always-on).
-2. **Create app → Deploy from GitHub** → pick your repo.
-3. **Builder**: `Dockerfile`.
-4. **Dockerfile location**: `apps/server/Dockerfile`.
-5. **Build context**: `/` (the repo root — the Dockerfile expects this).
-6. **Instance**: smallest free option (`eco` / `nano`).
-7. **Ports**: expose `5174` (Koyeb auto-injects `$PORT`; the Dockerfile reads
-   it).
-8. **Health check**: HTTP `GET /healthz` on the exposed port.
-9. **Environment variables** (Settings → Environment):
+> **Heads-up on free-tier caveat**: Render's free Web Service spins down after
+> 15 minutes of inactivity. First request after a sleep takes ~30s. That's
+> fine for a PoC; if it's annoying upgrade to `Starter` ($7/mo, always-on).
+
+1. Sign up at https://dashboard.render.com (GitHub OAuth, no card needed).
+2. **New → Web Service** → connect the GitHub repo `boozybats/genex`.
+3. Settings:
+   - **Name**: `genex-server`
+   - **Region**: closest to your users
+   - **Branch**: `main`
+   - **Root Directory**: leave blank (Dockerfile uses repo root context)
+   - **Runtime**: `Docker`
+   - **Dockerfile Path**: `apps/server/Dockerfile`
+   - **Instance Type**: `Free`
+   - **Health Check Path**: `/healthz`
+4. **Environment** tab:
    - `GENEX_CORS_ORIGIN` = `https://<your-vercel-domain>.vercel.app`
-     (set this **after** step 3 once you know the editor's URL).
+     (set this once you know the editor's URL).
    - `NODE_ENV` = `production`
-
-Hit **Deploy**. After ~2 min Koyeb gives you a URL like
-`https://genex-server-<hash>.koyeb.app`. Test it:
+5. **Create Web Service**. ~3 min later Render gives you a URL like
+   `https://genex-server.onrender.com`. Test it:
 
 ```bash
-curl https://genex-server-<hash>.koyeb.app/healthz
+curl https://genex-server.onrender.com/healthz
 # → {"ok":true,"ts":1779...}
 ```
 
@@ -80,7 +84,7 @@ Note that URL — call it `<SERVER_URL>` below.
 5. **Deploy**. Vercel gives you `https://<project>.vercel.app`. Open it — it
    should connect to your Koyeb server.
 
-Now go back to Koyeb and set `GENEX_CORS_ORIGIN` to the Vercel URL, then
+Now go back to Render and set `GENEX_CORS_ORIGIN` to the Vercel URL, then
 redeploy that service.
 
 ---
@@ -92,7 +96,7 @@ Update the public defaults in the CLI to point at your hosted server/editor:
 `apps/cli/src/index.ts`:
 
 ```ts
-const DEFAULT_SERVER = "https://<your-koyeb-domain>.koyeb.app";
+const DEFAULT_SERVER = "https://<your-render-domain>.onrender.com";
 const DEFAULT_EDITOR = "https://<your-vercel-domain>.vercel.app";
 ```
 
@@ -162,7 +166,7 @@ node apps/cli/dist/index.js create ./tmp-game
    the in-memory `Map`. Each `ProjectState` becomes a few Redis keys
    (`project:<id>:summary`, `project:<id>:definition`,
    `project:<id>:scripts:<sid>` → JSON).
-4. Set the two `UPSTASH_*` env vars on Koyeb.
+4. Set the two `UPSTASH_*` env vars on Render.
 
 Until then the in-memory store is fine — a server restart just means users
 re-run `genex create`.
@@ -172,17 +176,22 @@ re-run `genex create`.
 ## Troubleshooting
 
 **CORS error in the browser console.**
-The `GENEX_CORS_ORIGIN` env var on Koyeb must match the Vercel URL **exactly**
+The `GENEX_CORS_ORIGIN` env var on Render must match the Vercel URL **exactly**
 (scheme + host, no trailing slash). Redeploy the server after changing it.
 
 **WebSocket fails with `wss://` but HTTP works.**
-Koyeb handles `wss://` automatically when the service is reachable over HTTPS.
+Render handles `wss://` automatically when the service is reachable over HTTPS.
 Make sure `VITE_GENEX_WS` is set to `wss://` (not `ws://`) for the production
 build.
 
-**CLI can't reach the server.**
+**CLI can't reach the server (first request hangs ~30s).**
+Free Render services sleep after 15 min idle. First request wakes them up.
+This is expected; subsequent requests are fast. Upgrade to Starter ($7/mo) to
+keep it always-on.
+
+**CLI can't reach the server (error).**
 Test it manually: `curl https://<your-server>/healthz`. If that works, the CLI
-will too. If not — Koyeb dashboard → Service → Logs.
+will too. If not — Render dashboard → Service → Logs.
 
 **`npm publish` fails with `403 Forbidden`.**
 You need to claim the `@boozybats` scope on npm — log in once via

@@ -3,8 +3,8 @@
  * fall back to `http://localhost:5174` and `ws://localhost:5174` so existing
  * `npm run dev` workflows keep working. In production Vercel builds set:
  *
- *   VITE_GENEX_SERVER=https://genex-server.koyeb.app
- *   VITE_GENEX_WS=wss://genex-server.koyeb.app
+ *   VITE_GENEX_SERVER=https://genex-server.onrender.com
+ *   VITE_GENEX_WS=wss://genex-server.onrender.com
  *
  * (Both can be the same host; WS just needs the `wss://` scheme.)
  */
